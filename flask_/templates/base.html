@@ -6,7 +6,7 @@
 <body>
     <h1>파일 생성 예제</h1>
     <form method="post">
-        <button type="submit" id="startButton" {% if inference_completed %}disabled{% endif %}>추론 시작</button>
+        <button type="submit" id="startButton" {% if inf_completed %}disabled{% endif %}>추론 시작</button>
     </form>
     <div id="message" style="display:none;">
         {% if inf_completed %}

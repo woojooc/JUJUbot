@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, url_for
 from werkzeug.utils import redirect
 
+import Wav2Lip.inference as Inf
 import os
 
 import time
@@ -8,11 +9,14 @@ import threading
 
 from enum import Enum, auto
 
-bp = Blueprint('main', __name__,url_prefix='/' )
-
-
 py_path = "../../Wav2Lip/inference.py"
 model_path = "../../Wav2Lip/checkpoints/wav2lip_gan.pth"
+
+bp = Blueprint('main', __name__,url_prefix='/' )
+
+inf = Inf()
+# TODO _ 로드 한번 되었으면 또 로드되지 않도록 처리
+inf.load_model(model_path)
 
 # 추론 결과를 저장할 변수
 inf_completed = False
@@ -27,9 +31,12 @@ class E_emo(Enum):
     surprise = auto()
 
 
-def inference(cmd):
+def inference(cmd, face_p, audio_p):
 
-    os.system(cmd)
+    #os.system(cmd)
+    inf.addparser(model_path,face_p,audio_p)
+    inf.main()
+    
     time.sleep(5)
 
 
@@ -61,9 +68,11 @@ def main_index():
 
         
         # 추론
-        cmd = 'python ' + py_path + " --checkpoint_path " + model_path + " --face " + "../../data/01.mp4" + " --audio " + "../../data/wav00.wav"
+        face_path = "../../data/01.mp4"
+        audio_path = "../../data/wav00.wav"
+        cmd = 'python ' + py_path + " --checkpoint_path " + model_path + " --face " + face_path + " --audio " + audio_path
         #   추론을 백그라운드에서 실행하는 스레드 생성
-        inf_thread = threading.Thread(target=inference, args=(cmd))
+        inf_thread = threading.Thread(target=inference, args=(cmd, face_path, audio_path))
         inf_thread.start()
 
         #   파일 감시를 백그라운드에서 실행하는 스레드 생성
