@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Generation Example</title>
+</head>
+<body>
+    <h1>파일 생성 예제</h1>
+    <form method="post">
+        <button type="submit" id="startButton" {% if inference_completed %}disabled{% endif %}>추론 시작</button>
+    </form>
+    <div id="message" style="display:none;">
+        {% if inf_completed %}
+            추론이 완료되었습니다. 결과 파일을 확인하세요.
+        {% else %}
+            추론 중입니다. 잠시만 기다려주세요.
+        {% endif %}
+    </div>
+</body>
+</html>
