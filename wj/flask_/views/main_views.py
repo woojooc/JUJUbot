@@ -68,8 +68,8 @@ def main_index():
 
         
         # 추론
-        face_path = "../../data/01.mp4"
-        audio_path = "../../data/wav00.wav"
+        face_path = "../static/video/01.mp4"
+        audio_path = "../static/audio/wav00.wav"
         cmd = 'python ' + py_path + " --checkpoint_path " + model_path + " --face " + face_path + " --audio " + audio_path
         #   추론을 백그라운드에서 실행하는 스레드 생성
         inf_thread = threading.Thread(target=inference, args=(cmd, face_path, audio_path))
