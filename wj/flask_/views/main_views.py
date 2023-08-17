@@ -1,6 +1,9 @@
 from flask import Blueprint, render_template, request, url_for
 from werkzeug.utils import redirect
 
+# import os
+# print(os.getcwd())
+
 from Wav2Lip import inference as Inf
 import os
 
@@ -30,7 +33,7 @@ class E_emo(Enum):
     sadness = auto()
     surprise = auto()
 
-
+# 스레드 1 :  추론
 def inference(cmd, face_p, audio_p):
 
     #os.system(cmd)
@@ -39,10 +42,10 @@ def inference(cmd, face_p, audio_p):
     
     time.sleep(5)
 
-
+# 스레드 2 :  결과 파일 생성 확인
 def watch_for_new_files():
     global inf_completed
-    target_folder = "D:/GitHub/JUJUbot/Wav2Lip/results"  # 감시할 폴더 경로
+    target_folder = "D:/GitHub/JUJUbot/wj/Wav2Lip/results"  # 감시할 폴더 경로
 
     while True:
         time.sleep(1)  # 1초마다 폴더 스캔
@@ -68,6 +71,7 @@ def main_index():
 
         
         # 추론
+        #   테스트용 파일
         face_path = "../static/video/01.mp4"
         audio_path = "../static/audio/wav00.wav"
         cmd = 'python ' + py_path + " --checkpoint_path " + model_path + " --face " + face_path + " --audio " + audio_path

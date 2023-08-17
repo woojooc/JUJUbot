@@ -1,6 +1,5 @@
 from flask import Flask
-from Wav2Lip import *
-
+import os
 def create_app():
     app = Flask(__name__)
 

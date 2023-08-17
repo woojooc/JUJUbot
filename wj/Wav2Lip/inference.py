@@ -1,12 +1,18 @@
 from os import listdir, path
 import numpy as np
+# import os
+# print("======", os.getcwd())
 import scipy, cv2, os, sys, argparse
+
 from . import audio, face_detection
+
 import json, subprocess, random, string
 from tqdm import tqdm
 from glob import glob
 import torch
-from .models.wav2lip import Wav2Lip
+
+from Wav2Lip.models import Wav2Lip
+
 import platform
 
 
