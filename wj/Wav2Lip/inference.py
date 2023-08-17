@@ -194,7 +194,8 @@ def load_model(path):
 
 def main():
 	if not os.path.isfile(args.face):
-		raise ValueError('--face argument must be a valid path to video/image file')
+		print("none file path")
+		#raise ValueError('--face argument must be a valid path to video/image file')
 
 	elif args.face.split('.')[1] in ['jpg', 'png', 'jpeg']:
 		full_frames = [cv2.imread(args.face)]
