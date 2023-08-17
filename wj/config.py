@@ -1,7 +1,7 @@
 import sys
 import os
 
-wav_lib = "./Wav2Lip"
+wav_lib = "Wav2Lip"
 absolute_path = os.path.abspath(wav_lib)
 sys.path.append(absolute_path)
 

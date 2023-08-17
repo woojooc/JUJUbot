@@ -4,6 +4,15 @@ from werkzeug.utils import redirect
 # import os
 # print(os.getcwd())
 
+import sys
+import os
+wav_lib = "Wav2Lip"
+absolute_path = os.path.abspath(wav_lib)
+sys.path.append(absolute_path)
+
+print("000===", absolute_path)
+print("001===",sys.path)
+
 from Wav2Lip import inference as Inf
 import os
 
@@ -17,9 +26,9 @@ model_path = "../../Wav2Lip/checkpoints/wav2lip_gan.pth"
 
 bp = Blueprint('main', __name__,url_prefix='/' )
 
-inf = Inf()
+#inf = Inf()
 # TODO _ 로드 한번 되었으면 또 로드되지 않도록 처리
-inf.load_model(model_path)
+Inf.load_model(model_path)
 
 # 추론 결과를 저장할 변수
 inf_completed = False
@@ -34,16 +43,16 @@ class E_emo(Enum):
     surprise = auto()
 
 # 스레드 1 :  추론
-def inference(cmd, face_p, audio_p):
-
+def thd_inference(cmd, face_p, audio_p):
+    print("Inffffff")
     #os.system(cmd)
-    inf.addparser(model_path,face_p,audio_p)
-    inf.main()
+    Inf.addparser(model_path,face_p,audio_p)
+    Inf.main()
     
     time.sleep(5)
 
 # 스레드 2 :  결과 파일 생성 확인
-def watch_for_new_files():
+def thd_new_files():
     global inf_completed
     target_folder = "D:/GitHub/JUJUbot/wj/Wav2Lip/results"  # 감시할 폴더 경로
 
@@ -76,11 +85,11 @@ def main_index():
         audio_path = "../static/audio/wav00.wav"
         cmd = 'python ' + py_path + " --checkpoint_path " + model_path + " --face " + face_path + " --audio " + audio_path
         #   추론을 백그라운드에서 실행하는 스레드 생성
-        inf_thread = threading.Thread(target=inference, args=(cmd, face_path, audio_path))
+        inf_thread = threading.Thread(target=thd_inference, args=(cmd, face_path, audio_path))
         inf_thread.start()
 
         #   파일 감시를 백그라운드에서 실행하는 스레드 생성
-        file_thread = threading.Thread(target=watch_for_new_files)
+        file_thread = threading.Thread(target=thd_new_files)
         file_thread.start()
         
         return render_template("base.html", inf_completed=inf_completed)
