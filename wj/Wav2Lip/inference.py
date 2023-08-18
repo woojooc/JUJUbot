@@ -2,69 +2,46 @@ from os import listdir, path
 import numpy as np
 # import os
 # print("======", os.getcwd())
-import scipy, cv2, os, sys, argparse , audio
+import scipy, cv2, os, sys, argparse
+from . import audio, face_detection
 
 import json, subprocess, random, string
 from tqdm import tqdm
 from glob import glob
-import torch, face_detection
+import torch
 
-from models import Wav2Lip
+from .models import Wav2Lip
 
 import platform
 
 
-def addparser(model_path, face_path, audio_path):
+class CLI_Parser:
+	def __init__(self):
+		self.h= 'Inference code to lip-sync videos in the wild using Wav2Lip models'
+		self.checkpoint =r"checkpoints/wav2lip_gan.pth"
+		self.face=r"D:\GitHub\JUJUbot\wj\flask_\static\video\neu.mp4"
+		self.audio=r"D:\GitHub\JUJUbot\wj\flask_\static\audio\wav00.wav"
+		self.outfile=r'results/result_voice.mp4'
+		self.static=False
+		self.fps=25.
+		self.pads=[0, 10, 0, 0]
+		self.face_det_batch_size=16
+		self.wav2lip_batch_size=128
+		self.resize_factor=1
+		self.crop=[0, -1, 0, -1]
+		self.box=[-1, -1, -1, -1]
+		self.rotate=False
+		self.nosmooth=False
 
+		self.img_size = 96
+	
+args = CLI_Parser()
+model = None
+checkpoint = None
+
+def addparser(model_path, face_path, audio_path):
 	args.face = face_path
 	args.audio = audio_path
-
-
-parser = argparse.ArgumentParser(description='Inference code to lip-sync videos in the wild using Wav2Lip models')
-
-parser.add_argument( '--checkpoint' , type=str, 
-					help='Name of saved checkpoint to load weights from', default="checkpoints/wav2lip_gan.pth")
-
-parser.add_argument( '--face' , type=str, 
-					help='Filepath of video/image that contains faces to use', default="../flask_/static/video/neu.mp4")
-parser.add_argument( '--audio' , type=str, 
-					help='Filepath of video/audio file to use as raw audio source', default="../flask_/static/audio/wav00.wav")
-parser.add_argument('--outfile', type=str, help='Video path to save result. See default for an e.g.', 
-								default='results/result_voice.mp4')
-
-parser.add_argument('--static', type=bool, 
-					help='If True, then use only first video frame for inference', default=False)
-parser.add_argument('--fps', type=float, help='Can be specified only if input is a static image (default: 25)', 
-					default=25., required=False)
-
-parser.add_argument('--pads', nargs='+', type=int, default=[0, 10, 0, 0], 
-					help='Padding (top, bottom, left, right). Please adjust to include chin at least')
-
-parser.add_argument('--face_det_batch_size', type=int, 
-					help='Batch size for face detection', default=16)
-parser.add_argument('--wav2lip_batch_size', type=int, help='Batch size for Wav2Lip model(s)', default=128)
-
-parser.add_argument('--resize_factor', default=1, type=int, 
-			help='Reduce the resolution by this factor. Sometimes, best results are obtained at 480p or 720p')
-
-parser.add_argument('--crop', nargs='+', type=int, default=[0, -1, 0, -1], 
-					help='Crop video to a smaller region (top, bottom, left, right). Applied after resize_factor and rotate arg. ' 
-					'Useful if multiple face present. -1 implies the value will be auto-inferred based on height, width')
-
-parser.add_argument('--box', nargs='+', type=int, default=[-1, -1, -1, -1], 
-					help='Specify a constant bounding box for the face. Use only as a last resort if the face is not detected.'
-					'Also, might work only if the face is not moving around much. Syntax: (top, bottom, left, right).')
-
-parser.add_argument('--rotate', default=False, action='store_true',
-					help='Sometimes videos taken from a phone can be flipped 90deg. If true, will flip video right by 90deg.'
-					'Use if you get a flipped result, despite feeding a normal looking video')
-
-parser.add_argument('--nosmooth', default=False, action='store_true',
-					help='Prevent smoothing face detections over a short temporal window')
-
-args = parser.parse_args()
-args.img_size = 96
-
 
 if os.path.isfile(args.face) and args.face.split('.')[1] in ['jpg', 'png', 'jpeg']:
 	args.static = True
@@ -171,14 +148,21 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print('Using {} for inference.'.format(device))
 
 def _load(checkpoint_path):
-	if device == 'cuda':
-		checkpoint = torch.load(checkpoint_path)
+	global checkpoint
+	if checkpoint is None:
+		print('===checkpoints loading====')
+		if device == 'cuda':
+			checkpoint = torch.load(checkpoint_path)
+		else:
+			checkpoint = torch.load(checkpoint_path,
+									map_location=lambda storage, loc: storage)
 	else:
-		checkpoint = torch.load(checkpoint_path,
-								map_location=lambda storage, loc: storage)
+		print('===checkpoints aleady====')
 	return checkpoint
 
 def load_model(path):
+	global model, checkpoint
+
 	model = Wav2Lip()
 	print("Load checkpoint from: {}".format(path))
 	checkpoint = _load(path)
@@ -188,14 +172,19 @@ def load_model(path):
 		new_s[k.replace('module.', '')] = v
 	model.load_state_dict(new_s)
 
-	model = model.to(device)
-	print('====== Loaded model =======')
+	if not model.device.type == 'cuda':
+		model = model.to(device)
+		print('====== Loaded model =======')
+	else:
+		print('====aleady model loaded====')
+
 	return model.eval()
 
 def main():
 	if not os.path.isfile(args.face):
 		print("none file path")
-		#raise ValueError('--face argument must be a valid path to video/image file')
+		print(args.face, args.audio)
+		raise ValueError('--face argument must be a valid path to video/image file')
 
 	elif args.face.split('.')[1] in ['jpg', 'png', 'jpeg']:
 		full_frames = [cv2.imread(args.face)]

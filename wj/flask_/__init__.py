@@ -1,5 +1,6 @@
 from flask import Flask
-import os
+from Wav2Lip.inference import load_model
+
 
 def create_app():
     app = Flask(__name__)
