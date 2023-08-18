@@ -1,4 +1,10 @@
+emotion_classification/__pycache__/
+emotion_classification/.cache/
+emotion_classification/models/
+
 wj/org
 wj/AE
 wj/test.py
 wj/Wav2Lip/checkpoints/wav2lip_gan.pth
+
+
