@@ -61,6 +61,7 @@ class FaceAlignment:
         #module_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'detection', face_detector + '.py')
         #print("====mo_path====",module_path)  # 'face_detection.detection.' + face_detector
         
+        # 추가 절대 경로 모듈 불러오기
         relative_module_path = 'face_detection.detection.' + face_detector
         absolute_module_path = 'Wav2Lip.' + relative_module_path
         print("===abs M p====", absolute_module_path)

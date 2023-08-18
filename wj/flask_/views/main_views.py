@@ -70,9 +70,9 @@ def thd_new_files():
         if new_files:
             inf_completed = True
             print("새로운 파일이 생성되었습니다:", new_files)
-            time.sleep(1)
-
             event.set()
+
+            time.sleep(1)
             break
 
 
