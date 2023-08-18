@@ -3,7 +3,21 @@ import numpy as np
 # import os
 # print("======", os.getcwd())
 import scipy, cv2, os, sys, argparse
-from . import audio, face_detection
+
+'''
+fa_de = os.path.join("Wav2Lip","face_detection")
+absolute_path = os.path.abspath(fa_de)
+sys.path.append(absolute_path)
+print("000===", absolute_path)
+print("001===",sys.path)
+'''
+
+from . import audio
+try:
+	from . import face_detection
+	print("Imported well")
+except ImportError as e:
+	print("Import Error", e)
 
 import json, subprocess, random, string
 from tqdm import tqdm
@@ -15,10 +29,11 @@ from .models import Wav2Lip
 import platform
 
 
+
 class CLI_Parser:
 	def __init__(self):
 		self.h= 'Inference code to lip-sync videos in the wild using Wav2Lip models'
-		self.checkpoint =r"checkpoints/wav2lip_gan.pth"
+		self.checkpoint_path =r"checkpoints/wav2lip_gan.pth"
 		self.face=r"D:\GitHub\JUJUbot\wj\flask_\static\video\neu.mp4"
 		self.audio=r"D:\GitHub\JUJUbot\wj\flask_\static\audio\wav00.wav"
 		self.outfile=r'results/result_voice.mp4'
@@ -40,8 +55,14 @@ model = None
 checkpoint = None
 
 def addparser(model_path, face_path, audio_path):
+	args.checkpoint_path = model_path
 	args.face = face_path
 	args.audio = audio_path
+
+	## 추가
+	root = os.getcwd()
+	res_path = os.path.join(root,"Wav2Lip", "results", "result_voice.mp4")  #'results/result_voice.mp4'
+	args.outfile = res_path
 
 if os.path.isfile(args.face) and args.face.split('.')[1] in ['jpg', 'png', 'jpeg']:
 	args.static = True
@@ -56,6 +77,7 @@ def get_smoothened_boxes(boxes, T):
 	return boxes
 
 def face_detect(images):
+	print("facedetection====",face_detection)
 	detector = face_detection.FaceAlignment(face_detection.LandmarksType._2D, 
 											flip_input=False, device=device)
 
@@ -163,18 +185,20 @@ def _load(checkpoint_path):
 def load_model(path):
 	global model, checkpoint
 
-	model = Wav2Lip()
-	print("Load checkpoint from: {}".format(path))
-	checkpoint = _load(path)
-	s = checkpoint["state_dict"]
-	new_s = {}
-	for k, v in s.items():
-		new_s[k.replace('module.', '')] = v
-	model.load_state_dict(new_s)
+	if model is None:
+		model = Wav2Lip()
+		print("Load checkpoint from: {}".format(path))
+		checkpoint = _load(path)
+		s = checkpoint["state_dict"]
+		new_s = {}
+		for k, v in s.items():
+			new_s[k.replace('module.', '')] = v
+		model.load_state_dict(new_s)
 
-	if not model.device.type == 'cuda':
 		model = model.to(device)
+
 		print('====== Loaded model =======')
+
 	else:
 		print('====aleady model loaded====')
 
@@ -253,11 +277,17 @@ def main():
 	for i, (img_batch, mel_batch, frames, coords) in enumerate(tqdm(gen, 
 											total=int(np.ceil(float(len(mel_chunks))/batch_size)))):
 		if i == 0:
+			##### 원래 모델 로드 하는 부분 =============
 			model = load_model(args.checkpoint_path)
 			print ("Model loaded")
 
 			frame_h, frame_w = full_frames[0].shape[:-1]
-			out = cv2.VideoWriter('temp/result.avi', 
+
+			## 추가
+			root = os.getcwd()
+			res_path = os.path.join(root,"Wav2Lip", "temp", "result.avi")  #'temp/result.avi'
+
+			out = cv2.VideoWriter(res_path, 
 									cv2.VideoWriter_fourcc(*'DIVX'), fps, (frame_w, frame_h))
 
 		img_batch = torch.FloatTensor(np.transpose(img_batch, (0, 3, 1, 2))).to(device)
@@ -277,7 +307,7 @@ def main():
 
 	out.release()
 
-	command = 'ffmpeg -y -i {} -i {} -strict -2 -q:v 1 {}'.format(args.audio, 'temp/result.avi', args.outfile)
+	command = 'ffmpeg -y -i {} -i {} -strict -2 -q:v 1 {}'.format(args.audio, res_path, args.outfile)
 	subprocess.call(command, shell=platform.system() != 'Windows')
 
 
