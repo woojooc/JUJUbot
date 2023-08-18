@@ -29,6 +29,7 @@ res_path = "flask_/static/video/result_voice.mp4"
 
 bp = Blueprint('main', __name__,url_prefix='/' )
 
+Inf.load_detector()
 Inf.load_model(model_path)
 
 # 추론 결과를 저장할 변수
@@ -85,15 +86,16 @@ def main_index():
     else:
         inf_completed = False
 
-    if request.method == 'POST':
-        print(request.files)
-
+    # TODO 인풋 파일 받는 거 무한 대기 스레드
         # 보이스 데이터 받기
         #voice = request.files['voice']
         # 감정 분류 데이터 받기
         #emo = request.files['emo']
         # 감정에 따른 기본 영상 선택
 
+    # 버튼 클릭 시 post
+    if request.method == 'POST':
+        print(request.files)
         
         # 추론
         #   테스트용 파일

@@ -45,6 +45,7 @@ class CLI_Parser:
 args = CLI_Parser()
 model = None
 checkpoint = None
+detector = None
 
 def addparser(model_path, face_path, audio_path):
 	args.checkpoint_path = model_path
@@ -68,10 +69,20 @@ def get_smoothened_boxes(boxes, T):
 		boxes[i] = np.mean(window, axis=0)
 	return boxes
 
-def face_detect(images):
-	print("facedetection====",face_detection)
+# 추가 미리 로드하기
+def load_detector():
+	global detector
+
 	detector = face_detection.FaceAlignment(face_detection.LandmarksType._2D, 
 											flip_input=False, device=device)
+
+def face_detect(images):
+	global detector
+	#print("facedetection====",face_detection)
+	#detector = face_detection.FaceAlignment(face_detection.LandmarksType._2D, 
+	#										flip_input=False, device=device)
+	if detector is None:
+		load_detector()
 
 	batch_size = args.face_det_batch_size
 	
