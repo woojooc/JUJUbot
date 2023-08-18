@@ -4,14 +4,6 @@ import numpy as np
 # print("======", os.getcwd())
 import scipy, cv2, os, sys, argparse
 
-'''
-fa_de = os.path.join("Wav2Lip","face_detection")
-absolute_path = os.path.abspath(fa_de)
-sys.path.append(absolute_path)
-print("000===", absolute_path)
-print("001===",sys.path)
-'''
-
 from . import audio
 try:
 	from . import face_detection
@@ -28,7 +20,7 @@ from .models import Wav2Lip
 
 import platform
 
-
+import shutil
 
 class CLI_Parser:
 	def __init__(self):
@@ -309,6 +301,13 @@ def main():
 
 	command = 'ffmpeg -y -i {} -i {} -strict -2 -q:v 1 {}'.format(args.audio, res_path, args.outfile)
 	subprocess.call(command, shell=platform.system() != 'Windows')
+
+	# 추가 결과 파일 Flask로 이동
+	if os.path.exists(args.outfile):
+		src_path = args.outfile
+		dst_path = os.path.join("flask_","static","video", "result_voice.mp4")
+		shutil.copy(src_path, dst_path)
+		print("Result video copied to:", dst_path)
 
 
 if __name__ == '__main__':
