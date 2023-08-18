@@ -9,8 +9,8 @@ Branch
   
   
   3 emotion_classification   
-      사용 모델  :   
+      - 사용 모델  :   
  
-  4 wj - 보이스(wav)와 감정(str)을 인풋으로 받아 캐릭터 영상을 메인 웹에 전달한다.  
-      사용 모델  : Wav2Lip  
+  4 wj : 보이스(wav)와 감정(str)을 인풋으로 받아 캐릭터 영상을 메인 웹에 전달한다.  
+      - 사용 모델  : Wav2Lip  
       
