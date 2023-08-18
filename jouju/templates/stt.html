@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secret Jouju Chatbot STT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/basic.css') }}" />
+</head>
+<body>
+    <form method="post" enctype="multipart/form-data">
+        <br>
+    </form>
+
+    {% if transcript != "" %}
+        <div id="speechTranscriptContainer">
+            <h1>음성 인식 결과</h1>
+            <p id="speechText">{{ transcript }}</p>
+        </div>
+    {% endif %}
+</body>
+</html>
