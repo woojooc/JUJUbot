@@ -22,6 +22,10 @@ import platform
 
 import shutil
 
+# Multi GPU
+import torch
+import torch.nn as nn
+
 class CLI_Parser:
 	def __init__(self):
 		self.h= 'Inference code to lip-sync videos in the wild using Wav2Lip models'
@@ -45,6 +49,13 @@ class CLI_Parser:
 args = CLI_Parser()
 model = None
 checkpoint = None
+
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"]= "2"
+
+mel_step_size = 16
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print('Using {} for inference.'.format(device))
 
 def addparser(model_path, face_path, audio_path):
 	args.checkpoint_path = model_path
@@ -157,9 +168,6 @@ def datagen(frames, mels):
 
 		yield img_batch, mel_batch, frame_batch, coords_batch
 
-mel_step_size = 16
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print('Using {} for inference.'.format(device))
 
 def _load(checkpoint_path):
 	global checkpoint
@@ -186,6 +194,11 @@ def load_model(path):
 		for k, v in s.items():
 			new_s[k.replace('module.', '')] = v
 		model.load_state_dict(new_s)
+
+		# 추가 _ 멀티 GPU
+		if(device =='cuda') and (torch.cuda.device_count()>1):
+			print('Multi GPU possivle', torch.cuda.device_count())
+			model = nn.DataParallel(model)
 
 		model = model.to(device)
 

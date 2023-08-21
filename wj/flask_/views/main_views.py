@@ -52,32 +52,34 @@ def thd_inference(cmd, face_p, audio_p):
     Inf.addparser(model_path,face_p,audio_p)
     Inf.main()
     
-    time.sleep(5)
+    time.sleep(10)
 
 # 스레드 2 :  결과 파일 생성 확인
 def thd_new_files():
-    global inf_completed
+    global inf_completed, event
 
     target_folder = "Wav2Lip/results"  # D:/GitHub/JUJUbot/wj/ 감시할 폴더 경로
     print('------find file start -----')
 
     while True:
         time.sleep(1)  # 1초마다 폴더 스캔
+
         files = os.listdir(target_folder)
         new_files = [file for file in files if file.endswith(".mp4")]  # 새로운 .txt 파일 찾기
 
         if new_files:
             inf_completed = True
             print("새로운 파일이 생성되었습니다:", new_files)
-            time.sleep(1)
 
+            time.sleep(1)
             event.set()
+
             break
 
 
 @bp.route('/', methods=['GET','POST'])
 def main_index():
-    global inf_completed
+    global inf_completed, event
 
     # 새로고침 했을 때 결과 파일 있는지 확인
     if os.path.exists(res_path):
@@ -113,8 +115,12 @@ def main_index():
             file_thread.start()
         
             while True:
+                #print("while")
+                #if event.is_set():
                 if event.wait(1):  # 이벤트를 1초마다 체크
                     print("동영상 띄우는 동작 수행")
+
+                    event.clear()
                     return redirect(url_for('main.main_index', inf_completed = inf_completed))
 
     return render_template("base.html", inf_completed=inf_completed)
