@@ -49,6 +49,7 @@ class CLI_Parser:
 args = CLI_Parser()
 model = None
 checkpoint = None
+detector = None
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"]= "2"
@@ -79,10 +80,23 @@ def get_smoothened_boxes(boxes, T):
 		boxes[i] = np.mean(window, axis=0)
 	return boxes
 
-def face_detect(images):
-	print("facedetection====",face_detection)
+# 추가 미리 로드하기
+def load_detector():
+	global detector
+	print("called load_detector function")
 	detector = face_detection.FaceAlignment(face_detection.LandmarksType._2D, 
 											flip_input=False, device=device)
+
+def face_detect(images):
+	global detector
+	#print("facedetection====",face_detection)
+	#detector = face_detection.FaceAlignment(face_detection.LandmarksType._2D, 
+	#										flip_input=False, device=device)
+	
+	print(detector)
+	if detector is None:
+		print("detetor is None")
+		load_detector()
 
 	batch_size = args.face_det_batch_size
 	
@@ -117,7 +131,8 @@ def face_detect(images):
 	if not args.nosmooth: boxes = get_smoothened_boxes(boxes, T=5)
 	results = [[image[y1: y2, x1:x2], (y1, y2, x1, x2)] for image, (x1, y1, x2, y2) in zip(images, boxes)]
 
-	del detector
+	# 모델 한 번만 로드하게 주석처리함.
+	#del detector
 	return results 
 
 def datagen(frames, mels):
