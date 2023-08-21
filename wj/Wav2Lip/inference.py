@@ -52,11 +52,21 @@ checkpoint = None
 detector = None
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]= "2"
+os.environ["CUDA_VISIBLE_DEVICES"]= "0,1"
 
 mel_step_size = 16
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print("CUDA IS " ,torch.cuda.is_available())
 print('Using {} for inference.'.format(device))
+print('Current cuda device:', torch.cuda.current_device())
+num_gpus = torch.cuda.device_count()
+print('Count of using GPUs:', num_gpus)
+
+if num_gpus > 0:
+    print("사용 가능한 GPU 인덱스:")
+    for gpu_idx in range(num_gpus):
+        print(f"GPU {gpu_idx}: {torch.cuda.get_device_name(gpu_idx)}")
+
 
 def addparser(model_path, face_path, audio_path):
 	args.checkpoint_path = model_path
