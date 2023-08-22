@@ -16,53 +16,58 @@ def speech_to_text():
     r = sr.Recognizer()
     result = '안녕 만나서 반가워!' #default 값 설정
 
-    try:
+    # try:
         #음성 입력
 
-        with sr.Microphone() as source:
-            print('음성을 입력하세요')
-            audio = r.listen(source)
+    with sr.Microphone() as source:
+        print('음성을 입력하세요')
+        try:
+            audio = r.listen(source, timeout=5)
             result = r.recognize_google(audio, language='ko-KR')
             print(result)
-                
-            if result == '종료':
-                return render_template('index.html') #'종료'라고 말할 시 초기 화면으로 이동
-
-             # NLP 서버로 전송할 데이터
-            nlp_server_url = "http://192.168.0.21:8000/nlp/get_answer"
-            nlp_post_data = {
-                "text": result, #STT 결과
-                "target_style_name": "choding" #초등학생 말투
-            }
-
-            # NLP 서버에 요청 보내기
-            nlp_response = requests.get(nlp_server_url, params=nlp_post_data)
+        except sr.WaitTimeoutError as e:
+            print("타임아웃 오류:", e)
+            result = '안녕 만나서 반가워!'
             
-            if nlp_response.status_code == 200:
-                nlp_result = nlp_response.json()
-                print("NLP 결과:", nlp_result)
-            else:
-                print("NLP 서버 응답 실패:", nlp_response.status_code)
-                    
-
-    except:
-        
-        #print('Error')
-        # NLP 서버로 전송할 데이터
+            
         nlp_server_url = "http://192.168.0.21:8000/nlp/get_answer"
         nlp_post_data = {
             "text": result, #STT 결과
             "target_style_name": "choding" #초등학생 말투
-            }
+        }
 
         # NLP 서버에 요청 보내기
         nlp_response = requests.get(nlp_server_url, params=nlp_post_data)
-            
+        
         if nlp_response.status_code == 200:
             nlp_result = nlp_response.json()
             print("NLP 결과:", nlp_result)
         else:
             print("NLP 서버 응답 실패:", nlp_response.status_code)
+        # if result == '종료':
+        #     return render_template('index.html') #'종료'라고 말할 시 초기 화면으로 이동
+
+            # NLP 서버로 전송할 데이터
+                
+
+    # except:
+        
+    #     #print('Error')
+    #     # NLP 서버로 전송할 데이터
+    #     nlp_server_url = "http://192.168.0.21:8000/nlp/get_answer"
+    #     nlp_post_data = {
+    #         "text": result, #STT 결과
+    #         "target_style_name": "choding" #초등학생 말투
+    #         }
+
+    #     # NLP 서버에 요청 보내기
+    #     nlp_response = requests.get(nlp_server_url, params=nlp_post_data)
+            
+    #     if nlp_response.status_code == 200:
+    #         nlp_result = nlp_response.json()
+    #         print("NLP 결과:", nlp_result)
+    #     else:
+    #         print("NLP 서버 응답 실패:", nlp_response.status_code)
     
 
     return render_template('stt.html', question = result, answer = nlp_result['answer'][0], emotion=nlp_result['emotion'])
