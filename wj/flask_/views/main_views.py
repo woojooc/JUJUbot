@@ -63,6 +63,8 @@ def Backup_mp4():
     except Exception as e:
         print(f"파일 이동 중 오류가 발생했습니다: {e}")
 
+    return dst_path
+
 
 def select_mp4(f_name):
     root = os.getcwd()
@@ -146,9 +148,9 @@ def main_index():
 
                 res_path = os.path.join(os.getcwd(),"flask_", "static", "video", "result_voice.mp4")
 
-                send_file(res_path, mimetype='video/mp4')
-                time.sleep(2)
-                Backup_mp4()
-                return "File Sended"
+                #send_file(res_path, mimetype='video/mp4')
+                #time.sleep(2)
+                dst_path = Backup_mp4()
+                return send_file(dst_path, mimetype='video/mp4') #"File Sended"
     
     return "File sended"
