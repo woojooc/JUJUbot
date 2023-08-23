@@ -4,7 +4,7 @@ from Wav2Lip import inference as Inf
 import os
 
 import time, datetime
-import threading, socket
+import threading, shutil
 
 from enum import Enum, auto
 
@@ -35,6 +35,34 @@ def save_audio(file_data, filename):
     with open(filename, 'wb') as f:
         f.write(file_data)
     print(f"[*] Saved audio file as {filename}")
+
+def Backup_mp4():
+    delete_path = os.path.join(os.getcwd(), "Wav2Lip", "results", "result_voice.mp4")
+    
+    src_path = os.path.join(os.getcwd(), "flask_", "static","video", "result_voice.mp4")
+    dst_path = os.path.join(os.getcwd(), "flask_", "static","video","backup")
+    files = os.listdir(dst_path)
+    dst_name = "result" + '{:03}'.format(len(files)) + '.mp4'
+    dst_path = os.path.join(dst_path, dst_name)
+
+    # 라이브러리에 있는 파일 지우기
+    try:
+        os.remove(delete_path)
+        print(f"{delete_path} 파일이 삭제되었습니다.")
+    except FileNotFoundError:
+        print(f"{delete_path} 파일을 찾을 수 없습니다.")
+    except Exception as e:
+        print(f"파일 삭제 중 오류가 발생했습니다: {e}")
+
+    # flask에 있는 파일 옮기기
+    try:
+        shutil.move(src_path, dst_path)
+        print(f"{src_path} 파일이 {dst_path}로 이동되었습니다.")
+    except FileNotFoundError:
+        print(f"{src_path} 파일을 찾을 수 없습니다.")
+    except Exception as e:
+        print(f"파일 이동 중 오류가 발생했습니다: {e}")
+
 
 def select_mp4(f_name):
     root = os.getcwd()
@@ -117,7 +145,10 @@ def main_index():
                 event.clear()
 
                 res_path = os.path.join(os.getcwd(),"flask_", "static", "video", "result_voice.mp4")
-                return send_file(res_path, mimetype='video/mp4')
 
+                send_file(res_path, mimetype='video/mp4')
+                time.sleep(2)
+                Backup_mp4()
+                return "File Sended"
+    
     return "File sended"
-    #return render_template("base.html", inf_completed=inf_completed)
