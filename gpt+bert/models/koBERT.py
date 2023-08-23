@@ -67,7 +67,7 @@ class EmotionClassification():
         # BERT  모델 불러오기
         self.model = BERTClassifier(bertmodel,  dr_rate = 0.5).to(self.device)
         # self.model = torch.load("models/model_3_0.8999485596707815.pt", map_location=self.device)
-        self.model.load_state_dict(torch.load('models/model_7.pt', map_location=self.device))
+        self.model.load_state_dict(torch.load('resource/models/koBERT_best.pt', map_location=self.device))
 
     def predict(self, predict_sentence): # input = 감정분류하고자 하는 sentence
         max_len = 64
