@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secret Jouju Chatbot Calling</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/calling.css') }}" />
+</head>
+<body>
+    <div class = "top_bar">
+        <img src="../static/img/wifi.png" class="wifi">
+        <div class = "time">
+            <span id="clock" style=" font-size: 30px;">clock</span>
+            <span id="apm" style=" font-size: 30px;"  >ampm</span>
+        </div>
+        <div class = "batt">
+            <p>100%</p>
+            <img src="../static/img/battery.png" class="battery">
+        </div>
+        
+        
+        
+    </div>
+
+    <script> // 상단 현재 시각 표시
+        var Target = document.getElementById("clock");
+        var Target_apm = document.getElementById("apm");
+        function clock() {
+            var time = new Date();
+            var hours = time.getHours();
+            var minutes = time.getMinutes();
+            var AmPm ="AM";
+            if(hours > 12){   
+                var AmPm ="PM";
+                hours %= 12;
+            }
+
+            Target.innerText = 
+            `${hours < 10 ? `0${hours}` : hours}:${minutes < 10 ? `0${minutes}` : minutes}`;
+
+            Target_apm.innerText = `${AmPm}`;
+
+        }
+        clock();
+        setInterval(clock, 1000); // 1초마다 실행
+    </script>
+
+    <h1>여기 영상통화 페이지</h1>
+    <button class="mic"><a href="{{ url_for('calling.stt') }}">
+        <img src="../static/img/mic.png" alt="MIC Icon" class="mic-icon">
+        말하기</a></button>
+    <button class="end"><a href="{{ url_for('main.index') }}">
+        <img src="../static/img/hang_up.png" alt="Hang Up Icon" class="hangup-icon">
+        통화 종료</a></button>
+</body>
+</html>
