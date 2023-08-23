@@ -1,31 +1,16 @@
-from flask import Blueprint, render_template, request, url_for
+from flask import Blueprint, render_template, request, url_for, send_file
 from werkzeug.utils import redirect
-
-# import os
-# print(os.getcwd())
-
-'''
-import sys
-import os
-wav_lib = "Wav2Lip"
-absolute_path = os.path.abspath(wav_lib)
-sys.path.append(absolute_path)
-
-print("000===", absolute_path)
-print("001===",sys.path)
-'''
-
 from Wav2Lip import inference as Inf
 import os
 
-import time
-import threading
+import time, datetime
+import threading, socket
 
 from enum import Enum, auto
 
 py_path = "Wav2Lip/inference.py"
 model_path = "Wav2Lip/checkpoints/wav2lip_gan.pth"
-res_path = "flask_/static/video/result_voice.mp4"
+res_path = "static/video/result_voice.mp4"
 
 bp = Blueprint('main', __name__,url_prefix='/' )
 
@@ -45,15 +30,41 @@ class E_emo(Enum):
     sadness = auto()
     surprise = auto()
 
-# 스레드 1 :  추론
-def thd_inference(cmd, face_p, audio_p):
 
+def save_audio(file_data, filename):
+    with open(filename, 'wb') as f:
+        f.write(file_data)
+    print(f"[*] Saved audio file as {filename}")
+
+def select_mp4(f_name):
+    root = os.getcwd()
+    face_path = os.path.join(root, "flask_", "static", "video")
+    str_name = f_name.split('.')[0]
+    print("this is ==== ", str_name)
+    e_name = E_emo[str_name]
+    print("this is === ",e_name)
+    if e_name in ( E_emo.angry , E_emo.disgust ,E_emo.fear):
+        face_path = os.path.join(face_path, "ang.mp4")
+    elif e_name in (E_emo.neutral, E_emo.surprise):
+        face_path = os.path.join(face_path, "neu.mp4")
+    elif e_name == E_emo.happiness:
+        face_path = os.path.join(face_path, "hap.mp4")
+    elif e_name == E_emo.sadness:
+        face_path = os.path.join(face_path, "sad.mp4")
+    else:
+        face_path = os.path.join(face_path, "neu.mp4")
+    
+    print("face path = ", face_path)
+    return face_path
+
+# 스레드 1 :  추론
+def thd_inference(face_p, audio_p):
     print("Inffffff")
-    #os.system(cmd)
+
     Inf.addparser(model_path,face_p,audio_p)
     Inf.main()
     
-    time.sleep(10)
+    time.sleep(5)
 
 # 스레드 2 :  결과 파일 생성 확인
 def thd_new_files():
@@ -69,60 +80,44 @@ def thd_new_files():
         new_files = [file for file in files if file.endswith(".mp4")]  # 새로운 .txt 파일 찾기
 
         if new_files:
-            inf_completed = True
             print("새로운 파일이 생성되었습니다:", new_files)
-
             time.sleep(1)
             event.set()
-
             break
 
-
-@bp.route('/', methods=['GET','POST'])
+@bp.route('/', methods=['POST'])
 def main_index():
     global inf_completed, event
 
-    # 새로고침 했을 때 결과 파일 있는지 확인
-    if os.path.exists(res_path):
-        inf_completed = True
-    else:
+    if request.method == 'POST':
         inf_completed = False
 
-    # TODO 인풋 파일 받는 거 무한 대기 스레드
         # 보이스 데이터 받기
-        #voice = request.files['voice']
-        # 감정 분류 데이터 받기
-        #emo = request.files['emo']
-        # 감정에 따른 기본 영상 선택
+        print(request.files['file'])
+        print(request.files['file'].filename)
+        f = request.files['file']
+        filename = f.filename
+        save_path = os.path.join(os.getcwd(), "flask_", "static", "audio", filename)
+        audio = f.save(save_path)
 
-    # 버튼 클릭 시 post
-    if request.method == 'POST':
-        print(request.files)
-        
-        # 추론
-        #   테스트용 파일
-        print(os.getcwd()) #D:\GitHub\JUJUbot\wj
-        root = os.getcwd()
-        face_path = os.path.join(root, "flask_", "static", "video", "neu.mp4")#root + r"flask_\static\video\01.mp4"
-        audio_path = os.path.join(root, "flask_", "static", "audio", "wav00.wav")#root + r"flask_\static\audio\wav00.wav"
-        cmd = 'python ' + py_path + " --checkpoint_path " + model_path + " --face " + face_path + " --audio " + audio_path
-        
-        if inf_completed == False:
-            #   추론을 백그라운드에서 실행하는 스레드 생성
-            inf_thread = threading.Thread(target=thd_inference, args=(cmd, face_path, audio_path))
-            inf_thread.start()
+        face_path = select_mp4(filename)
 
-            #   파일 감시를 백그라운드에서 실행하는 스레드 생성
-            file_thread = threading.Thread(target=thd_new_files)
-            file_thread.start()
-        
-            while True:
-                #print("while")
-                #if event.is_set():
-                if event.wait(1):  # 이벤트를 1초마다 체크
-                    print("동영상 띄우는 동작 수행")
+        # 추론을 백그라운드에서 실행하는 스레드 생성
+        inf_thread = threading.Thread(target=thd_inference, args=(face_path, save_path))
+        inf_thread.start()
 
-                    event.clear()
-                    return redirect(url_for('main.main_index', inf_completed = inf_completed))
+        # 파일 감시를 백그라운드에서 실행하는 스레드 생성
+        file_thread = threading.Thread(target=thd_new_files)
+        file_thread.start()
 
-    return render_template("base.html", inf_completed=inf_completed)
+        while True:
+            if event.wait(1):  # 이벤트를 1초마다 체크
+                print("동영상 띄우는 동작 수행")
+                inf_completed = True
+                event.clear()
+
+                res_path = os.path.join(os.getcwd(),"flask_", "static", "video", "result_voice.mp4")
+                return send_file(res_path, mimetype='video/mp4')
+
+    return "File sended"
+    #return render_template("base.html", inf_completed=inf_completed)

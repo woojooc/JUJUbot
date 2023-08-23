@@ -29,20 +29,23 @@ import torch.nn as nn
 class CLI_Parser:
 	def __init__(self):
 		self.h= 'Inference code to lip-sync videos in the wild using Wav2Lip models'
-		self.checkpoint_path =r"checkpoints/wav2lip_gan.pth"
-		self.face=r"D:\GitHub\JUJUbot\wj\flask_\static\video\neu.mp4"
-		self.audio=r"D:\GitHub\JUJUbot\wj\flask_\static\audio\wav00.wav"
-		self.outfile=r'results/result_voice.mp4'
-		self.static=False
-		self.fps=25.
-		self.pads=[0, 10, 0, 0]
-		self.face_det_batch_size=16
-		self.wav2lip_batch_size=128
-		self.resize_factor=1
-		self.crop=[0, -1, 0, -1]
-		self.box=[-1, -1, -1, -1]
-		self.rotate=False
-		self.nosmooth=False
+		self.checkpoint_path =r"checkpoints/wav2lip_gan.pth" # Name of saved checkpoint to load weights from
+		self.face=r"D:\GitHub\JUJUbot\wj\flask_\static\video\neu.mp4" # Filepath of video/image that contains faces to use
+		self.audio=r"D:\GitHub\JUJUbot\wj\flask_\static\audio\wav00.wav" # Filepath of video/audio file to use as raw audio source
+		self.outfile=r'results/result_voice.mp4' # Video path to save result. See default for an e.g.
+		self.static=False # If True, then use only first video frame for inference
+		self.fps=25. # Can be specified only if input is a static image (default: 25)
+		self.pads=[0, 10, 0, 0] # Padding (top, bottom, left, right). Please adjust to include chin at least
+		self.face_det_batch_size=16 # Batch size for face detection
+		self.wav2lip_batch_size=128 # Batch size for Wav2Lip model(s)
+		self.resize_factor=1 # Reduce the resolution by this factor. Sometimes, best results are obtained at 480p or 720p
+		self.crop=[0, -1, 0, -1] # Crop video to a smaller region (top, bottom, left, right). Applied after resize_factor and rotate arg.
+		# Useful if multiple face present. -1 implies the value will be auto-inferred based on height, width
+		self.box=[-1, -1, -1, -1] # Specify a constant bounding box for the face. Use only as a last resort if the face is not detected.
+		# Also, might work only if the face is not moving around much. Syntax: (top, bottom, left, right).
+		self.rotate=False # Sometimes videos taken from a phone can be flipped 90deg. If true, will flip video right by 90deg.
+		# Use if you get a flipped result, despite feeding a normal looking video
+		self.nosmooth=False # Prevent smoothing face detections over a short temporal window'
 
 		self.img_size = 96
 	
