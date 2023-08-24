@@ -1,0 +1,32 @@
+blinker==1.6.2
+Brotli @ file:///D:/bld/brotli-split_1687884251065/work
+certifi==2023.7.22
+charset-normalizer @ file:///home/conda/feedstock_root/build_artifacts/charset-normalizer_1688813409104/work
+click==8.1.6
+colorama==0.4.6
+filelock @ file:///home/conda/feedstock_root/build_artifacts/filelock_1686612785345/work
+Flask==2.3.2
+gTTS==2.3.2
+idna @ file:///home/conda/feedstock_root/build_artifacts/idna_1663625384323/work
+importlib-metadata==6.8.0
+itsdangerous==2.1.2
+Jinja2 @ file:///home/conda/feedstock_root/build_artifacts/jinja2_1654302431367/work
+MarkupSafe @ file:///D:/bld/markupsafe_1685769253528/work
+mpmath @ file:///home/conda/feedstock_root/build_artifacts/mpmath_1678228039184/work
+networkx @ file:///home/conda/feedstock_root/build_artifacts/networkx_1680692919326/work
+numpy @ file:///D:/bld/numpy_1691056377689/work
+Pillow @ file:///D:/bld/pillow_1675487347122/work
+playsound==1.3.0
+PyAudio==0.2.13
+PySocks @ file:///D:/bld/pysocks_1661604991356/work
+requests @ file:///home/conda/feedstock_root/build_artifacts/requests_1684774241324/work
+SpeechRecognition==3.10.0
+sympy @ file:///home/conda/feedstock_root/build_artifacts/sympy_1684180539862/work
+torch==2.0.1
+torchaudio==2.0.2
+torchvision==0.15.2
+typing_extensions @ file:///home/conda/feedstock_root/build_artifacts/typing_extensions_1688315532570/work
+urllib3 @ file:///home/conda/feedstock_root/build_artifacts/urllib3_1689789803562/work
+Werkzeug==2.3.7
+win-inet-pton @ file:///D:/bld/win_inet_pton_1667051142467/work
+zipp==3.16.2

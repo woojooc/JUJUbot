@@ -1,6 +1,6 @@
-emotion_classification/__pycache__/
-emotion_classification/.cache/
-emotion_classification/models/
+gpt+bert/__pycache__/
+gpt+bert/.cache/
+gpt+bert/resource/models/
 
 wj/org
 wj/AE

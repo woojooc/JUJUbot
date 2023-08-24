@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secret Jouju Chatbot Main</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/scss/index.css') }}">
+</head>
+<body>
+    
+    <button class="start">
+        <a href="{{ url_for('calling.base') }}">
+            <img src="../static/img/calling.png" alt="Call Icon" class="call-icon">
+            전화 걸기</a>
+    </button>
+    
+</body>
+</html>
