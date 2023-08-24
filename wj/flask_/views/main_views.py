@@ -6,7 +6,7 @@ import os
 import time, datetime
 import threading, shutil
 
-from enum import Enum, auto
+from ..config import E_emo
 
 py_path = "Wav2Lip/inference.py"
 model_path = "Wav2Lip/checkpoints/wav2lip_gan.pth"
@@ -16,19 +16,11 @@ bp = Blueprint('main', __name__,url_prefix='/' )
 
 Inf.load_detector()
 Inf.load_model(model_path)
+Inf.load_video()
 
 # 추론 결과를 저장할 변수
 inf_completed = False
 event = threading.Event()
-
-class E_emo(Enum):
-    fear = auto()  # 1
-    angry = auto()
-    disgust = auto()
-    happiness = auto()
-    neutral = auto()
-    sadness = auto()
-    surprise = auto()
 
 
 def save_audio(file_data, filename):
@@ -87,11 +79,23 @@ def select_mp4(f_name):
     print("face path = ", face_path)
     return face_path
 
+def get_videoNum(f_name):
+    str_name = f_name.split('.')[0]
+    e_name = E_emo[str_name]
+
+    if e_name in ( E_emo.angry , E_emo.disgust):
+        return e_name.value
+    elif e_name in (E_emo.neutral, E_emo.surprise):
+        return E_emo.neutral.value
+
+    return e_name.value
+
 # 스레드 1 :  추론
-def thd_inference(face_p, audio_p):
+def thd_inference(face_p, audio_p, f_name):
     print("Inffffff")
 
-    Inf.addparser(model_path,face_p,audio_p)
+    idx = get_videoNum(f_name)
+    Inf.addparser(model_path,face_p,audio_p, idx)
     Inf.main()
     
     time.sleep(5)
@@ -133,7 +137,7 @@ def main_index():
         face_path = select_mp4(filename)
 
         # 추론을 백그라운드에서 실행하는 스레드 생성
-        inf_thread = threading.Thread(target=thd_inference, args=(face_path, save_path))
+        inf_thread = threading.Thread(target=thd_inference, args=(face_path, save_path, filename))
         inf_thread.start()
 
         # 파일 감시를 백그라운드에서 실행하는 스레드 생성

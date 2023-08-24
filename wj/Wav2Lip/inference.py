@@ -26,6 +26,9 @@ import shutil
 import torch
 import torch.nn as nn
 
+# Video load
+from .config import E_emo
+
 class CLI_Parser:
 	def __init__(self):
 		self.h= 'Inference code to lip-sync videos in the wild using Wav2Lip models'
@@ -48,6 +51,8 @@ class CLI_Parser:
 		self.nosmooth=False # Prevent smoothing face detections over a short temporal window'
 
 		self.img_size = 96
+
+		self.video_num = 2
 	
 args = CLI_Parser()
 model = None
@@ -65,16 +70,25 @@ print('Current cuda device:', torch.cuda.current_device())
 num_gpus = torch.cuda.device_count()
 print('Count of using GPUs:', num_gpus)
 
+# video load
+# param org
+full_frames = []
+fps = args.fps
+# param custom
+full_frames_ch = {}
+face_det_ch = {}
+
 if num_gpus > 0:
     print("사용 가능한 GPU 인덱스:")
     for gpu_idx in range(num_gpus):
         print(f"GPU {gpu_idx}: {torch.cuda.get_device_name(gpu_idx)}")
 
 
-def addparser(model_path, face_path, audio_path):
+def addparser(model_path, face_path, audio_path, v_num):
 	args.checkpoint_path = model_path
 	args.face = face_path
 	args.audio = audio_path
+	args.video_num = v_num
 
 	## 추가
 	root = os.getcwd()
@@ -151,6 +165,12 @@ def face_detect(images):
 def datagen(frames, mels):
 	img_batch, mel_batch, frame_batch, coords_batch = [], [], [], []
 
+	# 추가
+	frames = frames[:len(mels)]
+	face_det_results = face_det_ch[args.video_num]
+	face_det_results = face_det_results[:len(mels)]
+
+	'''
 	if args.box[0] == -1:
 		if not args.static:
 			face_det_results = face_detect(frames) # BGR2RGB for CNN face detection
@@ -160,6 +180,7 @@ def datagen(frames, mels):
 		print('Using the specified bounding box instead of face detection...')
 		y1, y2, x1, x2 = args.box
 		face_det_results = [[f[y1: y2, x1:x2], (y1, y2, x1, x2)] for f in frames]
+	'''
 
 	for i, m in enumerate(mels):
 		idx = 0 if args.static else i%len(frames)
@@ -237,43 +258,86 @@ def load_model(path):
 
 	return model.eval()
 
+# 추가
+def load_video():
+	global full_frames, fps
+
+	root = os.getcwd()
+	paths = []
+	paths.append(os.path.join(root, "flask_", "static", "video", "ang.mp4"))
+	paths.append(os.path.join(root, "flask_", "static", "video", "hap.mp4"))
+	paths.append(os.path.join(root, "flask_", "static", "video", "neu.mp4"))
+	paths.append(os.path.join(root, "flask_", "static", "video", "sad.mp4"))
+
+	for i in range(len(paths)):
+
+		if not os.path.isfile(paths[i]):
+			print("none file path")
+			print(paths[i], args.audio)
+			raise ValueError('--face argument must be a valid path to video/image file')
+
+		elif paths[i].split('.')[1] in ['jpg', 'png', 'jpeg']:
+			full_frames = [cv2.imread(paths[i])]
+			fps = args.fps
+
+		else:
+			video_stream = cv2.VideoCapture(paths[i])
+			fps = video_stream.get(cv2.CAP_PROP_FPS)
+
+			print('Reading video frames...')
+
+			temp = []
+			while 1:
+				still_reading, frame = video_stream.read()
+				if not still_reading:
+					video_stream.release()
+					break
+				if args.resize_factor > 1:
+					frame = cv2.resize(frame, (frame.shape[1]//args.resize_factor, frame.shape[0]//args.resize_factor))
+
+				if args.rotate:
+					frame = cv2.rotate(frame, cv2.cv2.ROTATE_90_CLOCKWISE)
+
+				y1, y2, x1, x2 = args.crop
+				if x2 == -1: x2 = frame.shape[1]
+				if y2 == -1: y2 = frame.shape[0]
+
+				frame = frame[y1:y2, x1:x2]
+
+				temp.append(frame)
+			full_frames_ch[i] = temp
+		print ("Number of frames available for inference: "+str(len(temp)))
+	print("Number of Video," ,len(full_frames_ch))
+
+	for i in range(len(paths)):
+		if args.box[0] == -1:
+			if not args.static:
+				face_det_results = face_detect(full_frames_ch[i]) # BGR2RGB for CNN face detection
+			else:
+				face_det_results = face_detect([full_frames_ch[i][0]])
+		else:
+			print('Using the specified bounding box instead of face detection...')
+			y1, y2, x1, x2 = args.box
+			face_det_results = [[f[y1: y2, x1:x2], (y1, y2, x1, x2)] for f in full_frames_ch[i]]
+		
+		face_det_ch[i] = face_det_results
+	print("Number of face det ch, " ,len(face_det_ch))
+
+
+def get_loaded_video(idx):
+	
+	print(full_frames_ch)
+
+	if idx in ( E_emo.angry.value , E_emo.disgust.value):
+		idx = 0
+	elif idx == E_emo.surprise.value :
+		idx = 2
+
+	return full_frames_ch[idx]
+
 def main():
-	if not os.path.isfile(args.face):
-		print("none file path")
-		print(args.face, args.audio)
-		raise ValueError('--face argument must be a valid path to video/image file')
-
-	elif args.face.split('.')[1] in ['jpg', 'png', 'jpeg']:
-		full_frames = [cv2.imread(args.face)]
-		fps = args.fps
-
-	else:
-		video_stream = cv2.VideoCapture(args.face)
-		fps = video_stream.get(cv2.CAP_PROP_FPS)
-
-		print('Reading video frames...')
-
-		full_frames = []
-		while 1:
-			still_reading, frame = video_stream.read()
-			if not still_reading:
-				video_stream.release()
-				break
-			if args.resize_factor > 1:
-				frame = cv2.resize(frame, (frame.shape[1]//args.resize_factor, frame.shape[0]//args.resize_factor))
-
-			if args.rotate:
-				frame = cv2.rotate(frame, cv2.cv2.ROTATE_90_CLOCKWISE)
-
-			y1, y2, x1, x2 = args.crop
-			if x2 == -1: x2 = frame.shape[1]
-			if y2 == -1: y2 = frame.shape[0]
-
-			frame = frame[y1:y2, x1:x2]
-
-			full_frames.append(frame)
-
-	print ("Number of frames available for inference: "+str(len(full_frames)))
+	global full_frames, fps
+	# video load 삭제
 
 	if not args.audio.endswith('.wav'):
 		print('Extracting raw audio...')
@@ -302,7 +366,9 @@ def main():
 
 	print("Length of mel chunks: {}".format(len(mel_chunks)))
 
-	full_frames = full_frames[:len(mel_chunks)]
+	# 교체 
+	full_frames = get_loaded_video(args.video_num)
+	#full_frames = full_frames[:len(mel_chunks)]
 
 	batch_size = args.wav2lip_batch_size
 	gen = datagen(full_frames.copy(), mel_chunks)
