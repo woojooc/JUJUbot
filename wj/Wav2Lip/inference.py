@@ -1,15 +1,9 @@
 from os import listdir, path
 import numpy as np
-# import os
-# print("======", os.getcwd())
 import scipy, cv2, os, sys, argparse
 
 from . import audio
-try:
-	from . import face_detection
-	print("Imported well")
-except ImportError as e:
-	print("Import Error", e)
+from . import face_detection
 
 import json, subprocess, random, string
 from tqdm import tqdm
@@ -170,17 +164,7 @@ def datagen(frames, mels):
 	face_det_results = face_det_ch[args.video_num]
 	face_det_results = face_det_results[:len(mels)]
 
-	'''
-	if args.box[0] == -1:
-		if not args.static:
-			face_det_results = face_detect(frames) # BGR2RGB for CNN face detection
-		else:
-			face_det_results = face_detect([frames[0]])
-	else:
-		print('Using the specified bounding box instead of face detection...')
-		y1, y2, x1, x2 = args.box
-		face_det_results = [[f[y1: y2, x1:x2], (y1, y2, x1, x2)] for f in frames]
-	'''
+	# 페이스 디텍션 부분 삭제
 
 	for i, m in enumerate(mels):
 		idx = 0 if args.static else i%len(frames)
@@ -246,7 +230,7 @@ def load_model(path):
 
 		# 추가 _ 멀티 GPU
 		if(device =='cuda') and (torch.cuda.device_count()>1):
-			print('Multi GPU possivle', torch.cuda.device_count())
+			print('Multi GPU possible', torch.cuda.device_count())
 			model = nn.DataParallel(model)
 
 		model = model.to(device)
@@ -269,6 +253,7 @@ def load_video():
 	paths.append(os.path.join(root, "flask_", "static", "video", "neu.mp4"))
 	paths.append(os.path.join(root, "flask_", "static", "video", "sad.mp4"))
 
+	# 동영상 미리 로드
 	for i in range(len(paths)):
 
 		if not os.path.isfile(paths[i]):
@@ -309,6 +294,7 @@ def load_video():
 		print ("Number of frames available for inference: "+str(len(temp)))
 	print("Number of Video," ,len(full_frames_ch))
 
+	# 페이스 디텍션 결과 미리 저장
 	for i in range(len(paths)):
 		if args.box[0] == -1:
 			if not args.static:
@@ -326,7 +312,7 @@ def load_video():
 
 def get_loaded_video(idx):
 	
-	print(full_frames_ch)
+	#print(full_frames_ch)
 
 	if idx in ( E_emo.angry.value , E_emo.disgust.value):
 		idx = 0
