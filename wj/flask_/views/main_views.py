@@ -84,9 +84,11 @@ def get_videoNum(f_name):
     e_name = E_emo[str_name]
 
     if e_name in ( E_emo.angry , E_emo.disgust):
-        return e_name.value
+        return 0
     elif e_name in (E_emo.neutral, E_emo.surprise):
         return E_emo.neutral.value
+
+    print("video num = ", e_name, e_name.value)
 
     return e_name.value
 

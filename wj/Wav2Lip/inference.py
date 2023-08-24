@@ -246,7 +246,7 @@ def load_model(path):
 
 		# 추가 _ 멀티 GPU
 		if(device =='cuda') and (torch.cuda.device_count()>1):
-			print('Multi GPU possivle', torch.cuda.device_count())
+			print('Multi GPU possible', torch.cuda.device_count())
 			model = nn.DataParallel(model)
 
 		model = model.to(device)
@@ -326,7 +326,7 @@ def load_video():
 
 def get_loaded_video(idx):
 	
-	print(full_frames_ch)
+	#print(full_frames_ch)
 
 	if idx in ( E_emo.angry.value , E_emo.disgust.value):
 		idx = 0
