@@ -18,6 +18,7 @@ class SFDDetector(FaceDetector):
         super(SFDDetector, self).__init__(device, verbose)
 
         # Initialise the face detector
+        print("******detect model path=",path_to_detector)
         if not os.path.isfile(path_to_detector):
             model_weights = load_url(models_urls['s3fd'])
         else:

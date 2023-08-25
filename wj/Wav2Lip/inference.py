@@ -1,15 +1,9 @@
 from os import listdir, path
 import numpy as np
-# import os
-# print("======", os.getcwd())
 import scipy, cv2, os, sys, argparse
 
 from . import audio
-try:
-	from . import face_detection
-	print("Imported well")
-except ImportError as e:
-	print("Import Error", e)
+from . import face_detection
 
 import json, subprocess, random, string
 from tqdm import tqdm
@@ -22,34 +16,73 @@ import platform
 
 import shutil
 
+# Multi GPU
+import torch
+import torch.nn as nn
+
+# Video load
+from .config import E_emo
+
 class CLI_Parser:
 	def __init__(self):
 		self.h= 'Inference code to lip-sync videos in the wild using Wav2Lip models'
-		self.checkpoint_path =r"checkpoints/wav2lip_gan.pth"
-		self.face=r"D:\GitHub\JUJUbot\wj\flask_\static\video\neu.mp4"
-		self.audio=r"D:\GitHub\JUJUbot\wj\flask_\static\audio\wav00.wav"
-		self.outfile=r'results/result_voice.mp4'
-		self.static=False
-		self.fps=25.
-		self.pads=[0, 10, 0, 0]
-		self.face_det_batch_size=16
-		self.wav2lip_batch_size=128
-		self.resize_factor=1
-		self.crop=[0, -1, 0, -1]
-		self.box=[-1, -1, -1, -1]
-		self.rotate=False
-		self.nosmooth=False
+		self.checkpoint_path =r"checkpoints/wav2lip_gan.pth" # Name of saved checkpoint to load weights from
+		self.face=r"D:\GitHub\JUJUbot\wj\flask_\static\video\neu.mp4" # Filepath of video/image that contains faces to use
+		self.audio=r"D:\GitHub\JUJUbot\wj\flask_\static\audio\wav00.wav" # Filepath of video/audio file to use as raw audio source
+		self.outfile=r'results/result_voice.mp4' # Video path to save result. See default for an e.g.
+		self.static=False # If True, then use only first video frame for inference
+		self.fps=25. # Can be specified only if input is a static image (default: 25)
+		self.pads=[0, 10, 0, 0] # Padding (top, bottom, left, right). Please adjust to include chin at least
+		self.face_det_batch_size=16 # Batch size for face detection
+		self.wav2lip_batch_size=128 # Batch size for Wav2Lip model(s)
+		self.resize_factor=1 # Reduce the resolution by this factor. Sometimes, best results are obtained at 480p or 720p
+		self.crop=[0, -1, 0, -1] # Crop video to a smaller region (top, bottom, left, right). Applied after resize_factor and rotate arg.
+		# Useful if multiple face present. -1 implies the value will be auto-inferred based on height, width
+		self.box=[-1, -1, -1, -1] # Specify a constant bounding box for the face. Use only as a last resort if the face is not detected.
+		# Also, might work only if the face is not moving around much. Syntax: (top, bottom, left, right).
+		self.rotate=False # Sometimes videos taken from a phone can be flipped 90deg. If true, will flip video right by 90deg.
+		# Use if you get a flipped result, despite feeding a normal looking video
+		self.nosmooth=False # Prevent smoothing face detections over a short temporal window'
 
 		self.img_size = 96
+
+		self.video_num = 2
 	
 args = CLI_Parser()
 model = None
 checkpoint = None
+detector = None
 
-def addparser(model_path, face_path, audio_path):
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"]= "0,1"
+
+mel_step_size = 16
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print("CUDA IS " ,torch.cuda.is_available())
+print('Using {} for inference.'.format(device))
+print('Current cuda device:', torch.cuda.current_device())
+num_gpus = torch.cuda.device_count()
+print('Count of using GPUs:', num_gpus)
+
+# video load
+# param org
+full_frames = []
+fps = args.fps
+# param custom
+full_frames_ch = {}
+face_det_ch = {}
+
+if num_gpus > 0:
+    print("사용 가능한 GPU 인덱스:")
+    for gpu_idx in range(num_gpus):
+        print(f"GPU {gpu_idx}: {torch.cuda.get_device_name(gpu_idx)}")
+
+
+def addparser(model_path, face_path, audio_path, v_num):
 	args.checkpoint_path = model_path
 	args.face = face_path
 	args.audio = audio_path
+	args.video_num = v_num
 
 	## 추가
 	root = os.getcwd()
@@ -68,10 +101,23 @@ def get_smoothened_boxes(boxes, T):
 		boxes[i] = np.mean(window, axis=0)
 	return boxes
 
-def face_detect(images):
-	print("facedetection====",face_detection)
+# 추가 미리 로드하기
+def load_detector():
+	global detector
+	print("called load_detector function")
 	detector = face_detection.FaceAlignment(face_detection.LandmarksType._2D, 
 											flip_input=False, device=device)
+
+def face_detect(images):
+	global detector
+	#print("facedetection====",face_detection)
+	#detector = face_detection.FaceAlignment(face_detection.LandmarksType._2D, 
+	#										flip_input=False, device=device)
+	
+	print(detector)
+	if detector is None:
+		print("detetor is None")
+		load_detector()
 
 	batch_size = args.face_det_batch_size
 	
@@ -106,21 +152,19 @@ def face_detect(images):
 	if not args.nosmooth: boxes = get_smoothened_boxes(boxes, T=5)
 	results = [[image[y1: y2, x1:x2], (y1, y2, x1, x2)] for image, (x1, y1, x2, y2) in zip(images, boxes)]
 
-	del detector
+	# 모델 한 번만 로드하게 주석처리함.
+	#del detector
 	return results 
 
 def datagen(frames, mels):
 	img_batch, mel_batch, frame_batch, coords_batch = [], [], [], []
 
-	if args.box[0] == -1:
-		if not args.static:
-			face_det_results = face_detect(frames) # BGR2RGB for CNN face detection
-		else:
-			face_det_results = face_detect([frames[0]])
-	else:
-		print('Using the specified bounding box instead of face detection...')
-		y1, y2, x1, x2 = args.box
-		face_det_results = [[f[y1: y2, x1:x2], (y1, y2, x1, x2)] for f in frames]
+	# 추가
+	frames = frames[:len(mels)]
+	face_det_results = face_det_ch[args.video_num]
+	face_det_results = face_det_results[:len(mels)]
+
+	# 페이스 디텍션 부분 삭제
 
 	for i, m in enumerate(mels):
 		idx = 0 if args.static else i%len(frames)
@@ -157,9 +201,6 @@ def datagen(frames, mels):
 
 		yield img_batch, mel_batch, frame_batch, coords_batch
 
-mel_step_size = 16
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print('Using {} for inference.'.format(device))
 
 def _load(checkpoint_path):
 	global checkpoint
@@ -187,6 +228,11 @@ def load_model(path):
 			new_s[k.replace('module.', '')] = v
 		model.load_state_dict(new_s)
 
+		# 추가 _ 멀티 GPU
+		if(device =='cuda') and (torch.cuda.device_count()>1):
+			print('Multi GPU possible', torch.cuda.device_count())
+			model = nn.DataParallel(model)
+
 		model = model.to(device)
 
 		print('====== Loaded model =======')
@@ -196,43 +242,88 @@ def load_model(path):
 
 	return model.eval()
 
+# 추가
+def load_video():
+	global full_frames, fps
+
+	root = os.getcwd()
+	paths = []
+	paths.append(os.path.join(root, "flask_", "static", "video", "ang.mp4"))
+	paths.append(os.path.join(root, "flask_", "static", "video", "hap.mp4"))
+	paths.append(os.path.join(root, "flask_", "static", "video", "neu.mp4"))
+	paths.append(os.path.join(root, "flask_", "static", "video", "sad.mp4"))
+
+	# 동영상 미리 로드
+	for i in range(len(paths)):
+
+		if not os.path.isfile(paths[i]):
+			print("none file path")
+			print(paths[i], args.audio)
+			raise ValueError('--face argument must be a valid path to video/image file')
+
+		elif paths[i].split('.')[1] in ['jpg', 'png', 'jpeg']:
+			full_frames = [cv2.imread(paths[i])]
+			fps = args.fps
+
+		else:
+			video_stream = cv2.VideoCapture(paths[i])
+			fps = video_stream.get(cv2.CAP_PROP_FPS)
+
+			print('Reading video frames...')
+
+			temp = []
+			while 1:
+				still_reading, frame = video_stream.read()
+				if not still_reading:
+					video_stream.release()
+					break
+				if args.resize_factor > 1:
+					frame = cv2.resize(frame, (frame.shape[1]//args.resize_factor, frame.shape[0]//args.resize_factor))
+
+				if args.rotate:
+					frame = cv2.rotate(frame, cv2.cv2.ROTATE_90_CLOCKWISE)
+
+				y1, y2, x1, x2 = args.crop
+				if x2 == -1: x2 = frame.shape[1]
+				if y2 == -1: y2 = frame.shape[0]
+
+				frame = frame[y1:y2, x1:x2]
+
+				temp.append(frame)
+			full_frames_ch[i] = temp
+		print ("Number of frames available for inference: "+str(len(temp)))
+	print("Number of Video," ,len(full_frames_ch))
+
+	# 페이스 디텍션 결과 미리 저장
+	for i in range(len(paths)):
+		if args.box[0] == -1:
+			if not args.static:
+				face_det_results = face_detect(full_frames_ch[i]) # BGR2RGB for CNN face detection
+			else:
+				face_det_results = face_detect([full_frames_ch[i][0]])
+		else:
+			print('Using the specified bounding box instead of face detection...')
+			y1, y2, x1, x2 = args.box
+			face_det_results = [[f[y1: y2, x1:x2], (y1, y2, x1, x2)] for f in full_frames_ch[i]]
+		
+		face_det_ch[i] = face_det_results
+	print("Number of face det ch, " ,len(face_det_ch))
+
+
+def get_loaded_video(idx):
+	
+	#print(full_frames_ch)
+
+	if idx in ( E_emo.angry.value , E_emo.disgust.value):
+		idx = 0
+	elif idx == E_emo.surprise.value :
+		idx = 2
+
+	return full_frames_ch[idx]
+
 def main():
-	if not os.path.isfile(args.face):
-		print("none file path")
-		print(args.face, args.audio)
-		raise ValueError('--face argument must be a valid path to video/image file')
-
-	elif args.face.split('.')[1] in ['jpg', 'png', 'jpeg']:
-		full_frames = [cv2.imread(args.face)]
-		fps = args.fps
-
-	else:
-		video_stream = cv2.VideoCapture(args.face)
-		fps = video_stream.get(cv2.CAP_PROP_FPS)
-
-		print('Reading video frames...')
-
-		full_frames = []
-		while 1:
-			still_reading, frame = video_stream.read()
-			if not still_reading:
-				video_stream.release()
-				break
-			if args.resize_factor > 1:
-				frame = cv2.resize(frame, (frame.shape[1]//args.resize_factor, frame.shape[0]//args.resize_factor))
-
-			if args.rotate:
-				frame = cv2.rotate(frame, cv2.cv2.ROTATE_90_CLOCKWISE)
-
-			y1, y2, x1, x2 = args.crop
-			if x2 == -1: x2 = frame.shape[1]
-			if y2 == -1: y2 = frame.shape[0]
-
-			frame = frame[y1:y2, x1:x2]
-
-			full_frames.append(frame)
-
-	print ("Number of frames available for inference: "+str(len(full_frames)))
+	global full_frames, fps
+	# video load 삭제
 
 	if not args.audio.endswith('.wav'):
 		print('Extracting raw audio...')
@@ -261,7 +352,9 @@ def main():
 
 	print("Length of mel chunks: {}".format(len(mel_chunks)))
 
-	full_frames = full_frames[:len(mel_chunks)]
+	# 교체 
+	full_frames = get_loaded_video(args.video_num)
+	#full_frames = full_frames[:len(mel_chunks)]
 
 	batch_size = args.wav2lip_batch_size
 	gen = datagen(full_frames.copy(), mel_chunks)
