@@ -8,3 +8,5 @@ wj/test.py
 wj/Wav2Lip/checkpoints/wav2lip_gan.pth
 
 
+*.wav
+*.mp4

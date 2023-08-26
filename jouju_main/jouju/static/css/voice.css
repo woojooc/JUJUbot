@@ -1,0 +1,125 @@
+@import url("https://fonts.googleapis.com/css?family=Rubik:700&display=swap");
+* {
+  box-sizing: border-box;
+}
+*::before, *::after {
+  box-sizing: border-box;
+}
+
+@font-face {
+    font-family: 'ONE-Mobile-POP';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2105_2@1.0/ONE-Mobile-POP.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+  }
+
+
+body {
+  background-image: url("../img/voice_bg2.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  font-family: 'ONE-Mobile-POP';
+
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  min-height: 100vh;
+  position: relative;
+
+  flex-direction: column;
+
+    
+}
+
+button {
+
+  display: inline-block;
+  cursor: pointer;
+  outline: none;
+  border: 0;
+  vertical-align: bottom;
+  text-decoration: none;
+  font-size: inherit;
+  font-family: 'ONE-Mobile-POP';
+
+  color: #000000;
+}
+
+button.end {
+  display: inline-flex;
+  align-items: center;
+
+  font-weight: 400;
+  color: #000000;
+  
+  padding: 1.5em 2.7em;
+  background: rgb(237, 27, 27);
+  border: 2px solid #960909;
+  border-radius: 0.75em;
+  transform-style: preserve-3d;
+  transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), background 150ms cubic-bezier(0, 0, 0.58, 1);
+  
+}
+  
+button.end a {
+    font-size: 35px;
+    text-decoration-line: none;
+
+    display: flex;
+    align-items: center;
+    color: white;
+  }
+  
+button.end::before {
+    position: absolute;
+    content: "";
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #cb0202;
+    border-radius: inherit;
+    box-shadow: 0 0 0 2px #960909, 0 0.625em 0 0 #c55653;
+    transform: translate3d(0, 0.75em, -1em);
+    transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
+  }
+button.end:hover {
+    background: #ff5050;
+    transform: translate(0, 0.25em);
+  }
+button.end:hover::before {
+    box-shadow: 0 0 0 2px #b18597, 0 0.5em 0 0 #ffe3e2;
+    transform: translate3d(0, 0.5em, -1em);
+  }
+button.end:active {
+    background: #ffe9e9;
+    transform: translate(0em, 0.75em);
+  }
+button.end:active::before {
+    box-shadow: 0 0 0 2px #b18597, 0 0 #ffe3e2;
+    transform: translate3d(0, 0, -1em);
+  }/*# sourceMappingURL=index.css.map */
+
+.hangup-icon {
+    width: 80px;
+   height: 80px;
+   margin-right: 10px;
+ }
+
+ .stopwatch {
+  font-size: 35px;
+  font-weight: 550;
+}
+
+.time {
+  margin-bottom: 23%; /* 원하는 간격 크기로 조정 */
+}
+
+.bottom-btn {
+  margin-top: 22%; /* 원하는 간격 크기로 조정 */
+}

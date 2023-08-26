@@ -7,12 +7,23 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/scss/index.css') }}">
 </head>
 <body>
+    <div class="container">
+        <button class="start" id="btn1">
+            <a href="{{ url_for('voice.voice_call') }}">
+                <img src="../static/img/calling.png" alt="Call Icon" class="Voice-Call">
+                음성 통화</a>
+        </button>
+
+        <button class="start" id="btn2">
+            <a href="{{ url_for('calling.base') }}">
+                <img src="../static/img/video_call.png" alt="Call Icon" class="Video-Call">
+                영상 통화</a>
+        </button>
+
+    </div>
     
-    <button class="start">
-        <a href="{{ url_for('calling.base') }}">
-            <img src="../static/img/calling.png" alt="Call Icon" class="call-icon">
-            전화 걸기</a>
-    </button>
+
+    
     
 </body>
 </html>

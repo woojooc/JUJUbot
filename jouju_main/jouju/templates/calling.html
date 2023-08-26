@@ -3,26 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secret Jouju Chatbot Calling</title>
+    <title>Secret Jouju Chatbot Video Call</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/calling.css') }}" />
 </head>
 <body>
-    <div class = "top_bar">
-        <img src="../static/img/wifi.png" class="wifi">
-        <div class = "time">
-            <span id="clock" style=" font-size: 30px;">clock</span>
-            <span id="apm" style=" font-size: 30px;"  >ampm</span>
+    <div class="call-bg">
+        <div class = "top_bar">
+            <img src="../static/img/wifi.png" class="wifi">
+            <div class = "time">
+                <span id="clock" style=" font-size: 35px; font-weight: 550;">clock</span>
+                <span id="apm" style=" font-size: 35px; font-weight: 550;"  >ampm</span>
+            </div>
+            <div class = "batt">
+                <p>100%</p>
+                <img src="../static/img/battery.png" class="battery">
+            </div>
         </div>
-        <div class = "batt">
-            <p>100%</p>
-            <img src="../static/img/battery.png" class="battery">
+        <div class="show">
+            <video controls autoplay id="audioPlayer">
+                <source id="audioSource" type="video/mp4">
+            </video>
         </div>
-        
-        
-        
+        <div class="bottom">
+            <button class="mic" id="startRecognition"><a>
+                <img src="../static/img/mic.png" alt="MIC Icon" class="mic-icon">
+                말하기</a></button>
+            <button class="end"><a href="{{ url_for('main.index') }}">
+                <img src="../static/img/hang_up.png" alt="Hang Up Icon" class="hangup-icon">
+                통화 종료</a></button>
+        </div>
     </div>
+    
 
     <script> // 상단 현재 시각 표시
+        const startRecognitionButton = document.getElementById('startRecognition');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const audioSource = document.getElementById('audioSource');
+
+        const recognition = new webkitSpeechRecognition();
+        recognition.continuous = false; // 단일 음성 인식
+        recognition.interimResults = false; // 최종 결과만 가져오도록 설정
+        recognition.lang = 'ko-KR'; // 인식 언어 설정
+
+        startRecognitionButton.addEventListener('click', () => {
+            recognition.start();
+            startRecognitionButton.disabled = true;
+        });
+
+        recognition.onresult = (event) => {
+            const result = event.results[0][0].transcript;
+            console.log('음성 인식 결과:', result);
+            recognition.stop();
+                console.log('음성 인식 중지');
+
+            // Flask 서버로 인식된 텍스트 전송
+            fetch('/calling/stt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text: result })
+            })
+            .then(response => response.json())
+            .then(data => {
+                audioSource.src = `{{ url_for('static', filename='video/') }}${data.new_audio_filename}`;
+                audioPlayer.load();
+                audioPlayer.play();
+                startRecognitionButton.disabled = false;
+                console.log('서버 응답:', data);
+            })
+            .catch(error => {
+                console.error('에러 발생:', error);
+            });
+        };
+
+        recognition.onerror = (event) => {
+            console.error('음성 인식 오류:', event.error);
+            startRecognitionButton.disabled = false;
+        };
+
+        window.onload = function() {
+            const introVideoFilename = 'intro.mp4';
+
+            audioSource.src = `{{ url_for('static', filename='/') }}${introVideoFilename}`;
+            audioPlayer.load();
+            audioPlayer.playbackRate = 0.8;
+            audioPlayer.play();
+        };
+
         var Target = document.getElementById("clock");
         var Target_apm = document.getElementById("apm");
         function clock() {
@@ -45,12 +113,6 @@
         setInterval(clock, 1000); // 1초마다 실행
     </script>
 
-    <h1>여기 영상통화 페이지</h1>
-    <button class="mic"><a href="{{ url_for('calling.stt') }}">
-        <img src="../static/img/mic.png" alt="MIC Icon" class="mic-icon">
-        말하기</a></button>
-    <button class="end"><a href="{{ url_for('main.index') }}">
-        <img src="../static/img/hang_up.png" alt="Hang Up Icon" class="hangup-icon">
-        통화 종료</a></button>
+    
 </body>
 </html>

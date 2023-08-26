@@ -1,72 +1,51 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, send_file, Flask, request, jsonify
+import os
+import server_connection as server_connection
+import speech_recognition as sr
+
+
 
 bp = Blueprint('calling', __name__, url_prefix='/calling')
 
+
 @bp.route('/')
 def base():
+    # 시작 전 오디오 파일 제거
+    dir = 'jouju/static/video'
+    for f in os.listdir(dir):
+        os.remove(os.path.join(dir, f))
+    dir = 'jouju/static/audio'
+    for f in os.listdir(dir):
+        os.remove(os.path.join(dir, f))
     return render_template('calling.html')
 
-@bp.route('/stt')
+
+@bp.route('/stt', methods=['POST'])
 def stt():
-    #일단은 한 번만 수행하도록 실행
-    #방향 1. 일정 시간을 정하고 계속 입력 받기, 2. DB 구축해서 값 받아 저장
-    r = sr.Recognizer()
-    result = '안녕 만나서 반가워!' #default 값 설정
+    chatbot_server = "http://192.168.0.32:8000/nlp/get_answer"
+    voice_server = "http://192.168.0.8:5002/tts/synthesis"
+    vedio_server = "http://192.168.0.50:5004/"
 
-    # try:
-        #음성 입력
+    audio_file_path = 'jouju/static/audio/'
+    video_file_path = 'jouju/static/video/'
 
-    with sr.Microphone() as source:
-        print('음성을 입력하세요')
-        try:
-            audio = r.listen(source, timeout=5)
-            result = r.recognize_google(audio, language='ko-KR')
-            print(result)
-        except sr.WaitTimeoutError as e:
-            print("타임아웃 오류:", e)
-            result = '안녕 만나서 반가워!'
-            
-            
-        nlp_server_url = "http://192.168.0.21:8000/nlp/get_answer"
-        nlp_post_data = {
-            "text": result, #STT 결과
-            "target_style_name": "choding" #초등학생 말투
-        }
+    style = "informal"
 
-        # NLP 서버에 요청 보내기
-        nlp_response = requests.get(nlp_server_url, params=nlp_post_data)
-        
-        if nlp_response.status_code == 200:
-            nlp_result = nlp_response.json()
-            print("NLP 결과:", nlp_result)
-        else:
-            print("NLP 서버 응답 실패:", nlp_response.status_code)
-        # if result == '종료':
-        #     return render_template('index.html') #'종료'라고 말할 시 초기 화면으로 이동
+    data = request.json
+    question = data.get('text')
+    print('음성 인식 결과:', question)
 
-            # NLP 서버로 전송할 데이터
-                
+    # server communication
+    result = server_connection.get_answer(chatbot_server, question, style)
+    print("answer : " + result['answer'][0])
+    voice_file_name = server_connection.get_voice(voice_server, audio_file_path, result['answer'][0])
+    vedio_file_name = server_connection.get_video(vedio_server, video_file_path, voice_file_name, result['emotion'])
 
-    # except:
-        
-    #     #print('Error')
-    #     # NLP 서버로 전송할 데이터
-    #     nlp_server_url = "http://192.168.0.21:8000/nlp/get_answer"
-    #     nlp_post_data = {
-    #         "text": result, #STT 결과
-    #         "target_style_name": "choding" #초등학생 말투
-    #         }
+    # return jsonify({'new_audio_filename': vedio_file_name})
+    # return render_template('calling.html', vedio_file_name=vedio_file_name)
+    return jsonify({'new_audio_filename': vedio_file_name})
 
-    #     # NLP 서버에 요청 보내기
-    #     nlp_response = requests.get(nlp_server_url, params=nlp_post_data)
-            
-    #     if nlp_response.status_code == 200:
-    #         nlp_result = nlp_response.json()
-    #         print("NLP 결과:", nlp_result)
-    #     else:
-    #         print("NLP 서버 응답 실패:", nlp_response.status_code)
-    question = result
-    answer = nlp_result['answer'][0]
-    emotion=nlp_result['emotion']
 
-    return question, answer, emotion
+# @bp.route('/video/<string:videoName>')
+# def video(videoName):
+#     return send_file("video/"+videoName)

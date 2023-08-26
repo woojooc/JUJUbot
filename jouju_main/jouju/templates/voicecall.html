@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secret Jouju Chatbot Voice Call</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/voice.css') }}">
+</head>
+<body>
+    <div class="time">
+        <span class="stopwatch">00:00</span>
+    </div>
+    <div class="bottom-btn">
+        <button class="end"><a href="{{ url_for('main.index') }}">
+            <img src="../static/img/hang_up.png" alt="Hang Up Icon" class="hangup-icon">
+            통화 종료</a>
+        </button>
+        <audio controls id="audioPlayer" style="display: none;">
+          <source id="audioSource" type="audio/wav">
+        </audio>
+    </div>
+
+    <script>
+        const stopwatchElement = document.querySelector('.stopwatch');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const audioSource = document.getElementById('audioSource');
+
+        const recognition = new webkitSpeechRecognition();
+        recognition.continuous = true;
+
+        recognition.onresult = (event) => {
+            const last = event.results.length - 1;
+            const result = event.results[last][0].transcript;
+
+            recognition.stop();
+            console.log('음성 인식 중지');
+
+            fetch('/voice_call/send_text', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text: result })
+            })
+            .then(response => response.json())
+            .then(data => {
+                audioSource.src = `{{ url_for('static', filename='audio/') }}${data.new_audio_filename}`;
+                audioPlayer.load();
+                audioPlayer.play();
+                setTimeout(() => {
+                    recognition.start();
+                    console.log('음성 인식 재개');
+                }, 2000);
+            })
+            .catch(error => {
+                console.error('에러 발생:', error);
+            });
+        };
+
+        recognition.onend = () => {
+            console.log('음성 인식 종료, 다시 시작합니다.');
+            recognition.start();
+        };
+
+        window.onload = function() {
+            const introAudioFilename = 'voicecall_intro.wav';
+            
+            audioSource.src = `{{ url_for('static', filename='/') }}${introAudioFilename}`;
+            audioPlayer.load();
+            audioPlayer.play();
+            setTimeout(() => {
+                    recognition.start();
+                    console.log('음성 인식 시작');
+                }, 9000);
+        };
+
+        let startTime;
+        let intervalId;
+
+        function updateStopwatch() {
+          const currentTime = new Date().getTime();
+          const elapsedTime = currentTime - startTime;
+          const seconds = Math.floor(elapsedTime / 1000);
+          const minutes = Math.floor(seconds / 60);
+          const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+          stopwatchElement.textContent = formattedTime;
+        }
+
+        function startStopwatch() {
+          startTime = new Date().getTime();
+          intervalId = setInterval(updateStopwatch, 1000);
+        }
+
+        function stopStopwatch() {
+          clearInterval(intervalId);
+        }
+
+        startStopwatch();
+    </script>
+</body>
+</html>

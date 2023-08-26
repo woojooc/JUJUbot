@@ -14,22 +14,29 @@
 }
 
 body {
-  background-image: url("../../img/jouju_main.png");
-  background-repeat: no-repeat;
-  background-size: 100%;
-  background-position: center;
+
 
   font-family: 'ONE-Mobile-POP';
 
   line-height: 1.5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+
   margin: 0;
-  min-height: 100vh;
-  position: relative;
+
 }
 
+.container {
+  background-image: url("../../img/jouju_main.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: flex-end; /* 버튼을 우측 하단에 배치 */
+  height: 100vh; /* 화면 높이와 동일하게 설정 */
+  position: relative;
+}
 
 button {
 
@@ -42,19 +49,50 @@ button {
   font-family: inherit;
 }
 
+#btn1 {
+  bottom: 5%; 
+  right: 20%;
+}
+
+#btn2 {
+  bottom: 15%; 
+  right: 20%;
+}
+
+
+
 button.start {
-  display: inline-flex;
+  padding: 2% 4%; 
+  position: static;
+
+  margin-bottom: 10%;
+
+
+  display: inline-block;
   align-items: center;
 
-  font-weight: 600;
+  font-weight: 400;
   color: #000000;
   
-  padding: 1.8em 3em;
+  
   background: #fff0f0;
   border: 2px solid #b18597;
   border-radius: 0.75em;
   transform-style: preserve-3d;
   transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), background 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+@media screen and (max-width: 768px) {
+  button.start {
+    padding: 1% 1.5%; /* 작은 크기로 조절 */
+  }
+}
+
+/* 화면 너비가 480px 이하일 때 버튼 크기 조정 */
+@media screen and (max-width: 480px) {
+  button.start {
+    padding: 2% 4%; /* 더 작은 크기로 조절 */
+  }
 }
 
 button.start a {
@@ -99,7 +137,13 @@ button.start:active::before {
   transform: translate3d(0, 0, -1em);
 }/*# sourceMappingURL=index.css.map */
 
-.call-icon {
+.Video-Call {
+  width: 80px;
+  height: 80px;
+  margin-right: 10px;
+}
+
+.Voice-Call {
   width: 80px;
   height: 80px;
   margin-right: 10px;

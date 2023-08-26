@@ -4,22 +4,21 @@ import os
 
 
 def get_answer(url, question, style):
-    data = {
-        "text": question, #STT 결과
-        "target_style_name": style}
+    data = {"text": question, #STT 결과
+            "target_style_name": style}
     nlp_response = requests.get(url, params=data)
 
     if nlp_response.status_code == 200:
         nlp_result = nlp_response.json()
+        print('answer generate done')
         return nlp_result
     else:
         return nlp_response.status_code
     
     
 def temp_tts(url, question, style):
-    data = {
-        "text": question, #STT 결과
-        "target_style_name": style}
+    data = {"text": question, #STT 결과
+            "target_style_name": style}
 
     file_response = requests.get(url, params=data)
 
@@ -32,35 +31,51 @@ def temp_tts(url, question, style):
         return file_response.status_code
     
 
-def get_voice(url, answer, emotion):
+def get_voice(url, path, answer):
     data = {'result': answer}
     headers = {"Content-Type": "application/json"}
-
+    
     file_response = requests.post(url, headers=headers, data=json.dumps(data))
 
     if file_response.status_code == 200:
-        # name = f"{emotion}.wav"
-        name = "static/audio/temp.wav"
-        os.remove(name)
-        with open(name, 'wb') as file:
-            file.write(file_response.content)
-            print('voice generate done')
+        for i in range(100):
+            name = f"temp{i}.wav"
+            if os.path.isfile(path + name):
+                pass
+            else:
+                with open(path + name, 'wb') as file:
+                    file.write(file_response.content)
+                    print('voice generate done')
+                    break
         return name
     else:
-        return file_response.status_code
+        return 'vidoe generate err : ' + str(file_response.status_code)
 
-def get_video(url, file_path):
-    files = open(file_path, 'rb')
-
+def get_video(url, path, file_path, emotion):
+    voice_path = 'jouju/static/audio/'
+    try:
+        os.rename(voice_path + file_path, voice_path + f'{emotion}.wav')
+    except:
+        os.remove(voice_path + f'{emotion}.wav')
+        os.rename(voice_path + file_path, voice_path + f'{emotion}.wav')
+    files = open(voice_path + f'{emotion}.wav', 'rb')
     upload = {'file': files}
 
     file_response = requests.post(url, files = upload)
 
     if file_response.status_code == 200:
-        with open("test.mp4", 'wb') as file:
-            file.write(file_response.content)
+        for i in range(100):
+            name = f"temp{i}.mp4"
+            if os.path.isfile(path + name):
+                pass
+            else:
+                with open(path + name, 'wb') as file:
+                    file.write(file_response.content)
+                    print('vedio generate done')
+                    break
+        return name
     else:
-        return file_response.status_code
+        return 'vidoe generate err : ' + str(file_response.status_code)
 
 
 
