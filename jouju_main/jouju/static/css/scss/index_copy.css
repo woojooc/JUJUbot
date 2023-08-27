@@ -32,7 +32,7 @@ body {
 
   display: flex;
   align-items: center;
-  flex-direction: row;
+  flex-direction: column;
   justify-content: flex-end; /* 버튼을 우측 하단에 배치 */
   height: 100vh; /* 화면 높이와 동일하게 설정 */
   position: relative;
@@ -49,16 +49,24 @@ button {
   font-family: inherit;
 }
 
-
-#btn1, #btn2 {
-  /* ... 기존 스타일 ... */
-  margin-top: 300px; /* 버튼 간격 조정 */
-  margin-right: 120px;
+#btn1 {
+  bottom: 5%; 
+  right: 20%;
 }
+
+#btn2 {
+  bottom: 15%; 
+  right: 20%;
+}
+
+
 
 button.start {
   padding: 2% 4%; 
   position: static;
+
+  margin-bottom: 10%;
+
 
   display: inline-block;
   align-items: center;
