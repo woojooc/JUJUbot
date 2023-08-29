@@ -3,6 +3,18 @@ import json
 import os
 
 
+def get_emotion(url, answer):
+    data = {"text": answer}
+    response = requests.get(url, params=data)
+
+    if response.status_code == 200:
+        classification_result = response.json()
+        print('emotion classification done')
+        return classification_result['emotion']
+    else:
+        return response.status_code
+    
+
 def get_answer(url, question, style):
     data = {"text": question, #STT 결과
             "target_style_name": style}

@@ -5,8 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Secret Jouju Chatbot Voice Call</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/voice.css') }}">
+    <style>
+        /* 추가된 로딩 화면 스타일 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            display: none; /* 처음에는 숨김 */
+        }
+        
+        .loading-text {
+            color: white;
+            font-size: 30px;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+
+        .loading-icon {
+            width: 80px;
+            height: 80px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
+    <div class="loading-overlay">
+        <div class="loading-content">
+            <img src="../static/img/jouju_loading2.gif" alt="로딩 이미지" class="loading-icon"><br>
+        </div>
+    </div>
     <div class="time">
         <span class="stopwatch">00:00</span>
     </div>
@@ -24,6 +65,16 @@
         const stopwatchElement = document.querySelector('.stopwatch');
         const audioPlayer = document.getElementById('audioPlayer');
         const audioSource = document.getElementById('audioSource');
+        
+        // 로딩 화면 보여주기 함수
+        function showLoading() {
+            document.querySelector('.loading-overlay').style.display = 'flex';
+        }
+
+        // 로딩 화면 숨기기 함수
+        function hideLoading() {
+            document.querySelector('.loading-overlay').style.display = 'none';
+        }
 
         const recognition = new webkitSpeechRecognition();
         recognition.continuous = true;
@@ -32,8 +83,9 @@
             const last = event.results.length - 1;
             const result = event.results[last][0].transcript;
 
-            recognition.stop();
+            recognition.stop(); 
             console.log('음성 인식 중지');
+            showLoading();
 
             fetch('/voice_call/send_text', {
                 method: 'POST',
@@ -44,7 +96,8 @@
             })
             .then(response => response.json())
             .then(data => {
-                audioSource.src = `{{ url_for('static', filename='audio/') }}${data.new_audio_filename}`;
+                hideLoading();
+                audioSource.src = `{{ url_for('static', filename='/') }}${data.new_audio_filename}`;
                 audioPlayer.load();
                 audioPlayer.play();
                 setTimeout(() => {
@@ -57,10 +110,6 @@
             });
         };
 
-        recognition.onend = () => {
-            console.log('음성 인식 종료, 다시 시작합니다.');
-            recognition.start();
-        };
 
         window.onload = function() {
             const introAudioFilename = 'voicecall_intro.wav';

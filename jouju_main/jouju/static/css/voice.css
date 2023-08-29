@@ -117,9 +117,9 @@ button.end:active::before {
 }
 
 .time {
-  margin-bottom: 23%; /* 원하는 간격 크기로 조정 */
+  margin-bottom:350px; /* 원하는 간격 크기로 조정 */
 }
 
 .bottom-btn {
-  margin-top: 22%; /* 원하는 간격 크기로 조정 */
+  margin-top: 320px; /* 원하는 간격 크기로 조정 */
 }
