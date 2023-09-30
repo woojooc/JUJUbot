@@ -7,7 +7,7 @@
   
 ## Branch   
    
-### 1 jouju_main (서버 0)
+### 1 jouju_main (서버 0) 
       - 사용 모델  : NgRock, Flask 서버, GPT4(랭체인)
       - 서비스 기능 : 시크릿 주주와 음성 통화 및 영상 통화
   
