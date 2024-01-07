@@ -2,10 +2,9 @@
 
 메타버스 아카데미 8월 프로젝트
 
-#### 🎥 시연 영상 보러가기([Click])
-#### 📙 발표자료 보러가기([Click])
+#### 🎥 시연 영상 보러가기([Click]())
+#### 📙 발표자료 보러가기([Click]())
 
-<img src="https://github.com/crime-capture-tv/AI-server/assets/141614581/ace435a8-d4b3-4291-8627-dc59e052e55d" width="70%">
 
 <br/>
 
